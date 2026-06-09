@@ -1,37 +1,9 @@
-from dataclasses import dataclass
-from enum import StrEnum
+from app.models.comment import Comment
+from app.models.post import Post
+from app.models.user import Role, User
 
 
-class Role(StrEnum):
-    SUPER_ADMIN = "super_admin"
-    MODERATOR = "moderator"
-    REGULAR_USER = "regular_user"
-    GUEST = "guest"
-
-
-@dataclass(frozen=True)
-class User:
-    id: int
-    role: Role
-
-
-@dataclass(frozen=True)
-class Post:
-    id: int
-    author_id: int
-    title: str
-    body: str
-
-
-@dataclass(frozen=True)
-class Comment:
-    id: int
-    post_id: int
-    author_id: int
-    body: str
-
-
-class Authorization:
+class AuthorizationService:
     @staticmethod
     def can_read(user: User) -> bool:
         return user.role in {
@@ -77,3 +49,4 @@ class Authorization:
         if user.role != Role.REGULAR_USER:
             return False
         return comment.author_id == user.id or post.author_id == user.id
+
