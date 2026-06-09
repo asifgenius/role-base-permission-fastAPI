@@ -1,6 +1,9 @@
 import unittest
 
-from authorization import Authorization, Comment, Post, Role, User
+from app.models.comment import Comment
+from app.models.post import Post
+from app.models.user import Role, User
+from app.services.authorization_service import AuthorizationService
 
 
 class AuthorizationTests(unittest.TestCase):
@@ -22,13 +25,13 @@ class AuthorizationTests(unittest.TestCase):
         )
 
     def test_super_admin_has_full_delete_access_and_user_management(self) -> None:
-        self.assertTrue(Authorization.can_manage_users(self.super_admin))
-        self.assertTrue(Authorization.can_delete_post(self.super_admin, self.post_by_a))
-        self.assertFalse(Authorization.can_create_post(self.super_admin))
-        self.assertFalse(Authorization.can_create_comment(self.super_admin, self.post_by_a))
-        self.assertFalse(Authorization.can_update_post(self.super_admin, self.post_by_a))
+        self.assertTrue(AuthorizationService.can_manage_users(self.super_admin))
+        self.assertTrue(AuthorizationService.can_delete_post(self.super_admin, self.post_by_a))
+        self.assertFalse(AuthorizationService.can_create_post(self.super_admin))
+        self.assertFalse(AuthorizationService.can_create_comment(self.super_admin, self.post_by_a))
+        self.assertFalse(AuthorizationService.can_update_post(self.super_admin, self.post_by_a))
         self.assertTrue(
-            Authorization.can_delete_comment(
+            AuthorizationService.can_delete_comment(
                 self.super_admin,
                 self.post_by_a,
                 self.comment_by_b_on_a,
@@ -36,13 +39,13 @@ class AuthorizationTests(unittest.TestCase):
         )
 
     def test_moderator_can_delete_posts_and_comments_but_not_manage_users(self) -> None:
-        self.assertFalse(Authorization.can_manage_users(self.moderator))
-        self.assertTrue(Authorization.can_delete_post(self.moderator, self.post_by_a))
-        self.assertFalse(Authorization.can_create_post(self.moderator))
-        self.assertFalse(Authorization.can_create_comment(self.moderator, self.post_by_a))
-        self.assertFalse(Authorization.can_update_post(self.moderator, self.post_by_a))
+        self.assertFalse(AuthorizationService.can_manage_users(self.moderator))
+        self.assertTrue(AuthorizationService.can_delete_post(self.moderator, self.post_by_a))
+        self.assertFalse(AuthorizationService.can_create_post(self.moderator))
+        self.assertFalse(AuthorizationService.can_create_comment(self.moderator, self.post_by_a))
+        self.assertFalse(AuthorizationService.can_update_post(self.moderator, self.post_by_a))
         self.assertTrue(
-            Authorization.can_delete_comment(
+            AuthorizationService.can_delete_comment(
                 self.moderator,
                 self.post_by_a,
                 self.comment_by_b_on_a,
@@ -50,20 +53,20 @@ class AuthorizationTests(unittest.TestCase):
         )
 
     def test_regular_user_can_create_posts_and_only_change_their_own_posts(self) -> None:
-        self.assertTrue(Authorization.can_create_post(self.user_a))
-        self.assertTrue(Authorization.can_update_post(self.user_a, self.post_by_a))
-        self.assertTrue(Authorization.can_delete_post(self.user_a, self.post_by_a))
-        self.assertFalse(Authorization.can_update_post(self.user_a, self.post_by_b))
-        self.assertFalse(Authorization.can_delete_post(self.user_a, self.post_by_b))
+        self.assertTrue(AuthorizationService.can_create_post(self.user_a))
+        self.assertTrue(AuthorizationService.can_update_post(self.user_a, self.post_by_a))
+        self.assertTrue(AuthorizationService.can_delete_post(self.user_a, self.post_by_a))
+        self.assertFalse(AuthorizationService.can_update_post(self.user_a, self.post_by_b))
+        self.assertFalse(AuthorizationService.can_delete_post(self.user_a, self.post_by_b))
 
     def test_guest_can_only_read(self) -> None:
-        self.assertTrue(Authorization.can_read(self.guest))
-        self.assertFalse(Authorization.can_manage_users(self.guest))
-        self.assertFalse(Authorization.can_create_post(self.guest))
-        self.assertFalse(Authorization.can_create_comment(self.guest, self.post_by_a))
-        self.assertFalse(Authorization.can_delete_post(self.guest, self.post_by_a))
+        self.assertTrue(AuthorizationService.can_read(self.guest))
+        self.assertFalse(AuthorizationService.can_manage_users(self.guest))
+        self.assertFalse(AuthorizationService.can_create_post(self.guest))
+        self.assertFalse(AuthorizationService.can_create_comment(self.guest, self.post_by_a))
+        self.assertFalse(AuthorizationService.can_delete_post(self.guest, self.post_by_a))
         self.assertFalse(
-            Authorization.can_delete_comment(
+            AuthorizationService.can_delete_comment(
                 self.guest,
                 self.post_by_a,
                 self.comment_by_b_on_a,
@@ -71,11 +74,11 @@ class AuthorizationTests(unittest.TestCase):
         )
 
     def test_user_b_can_comment_on_user_as_post(self) -> None:
-        self.assertTrue(Authorization.can_create_comment(self.user_b, self.post_by_a))
+        self.assertTrue(AuthorizationService.can_create_comment(self.user_b, self.post_by_a))
 
     def test_post_owner_can_delete_other_users_comments_on_their_post(self) -> None:
         self.assertTrue(
-            Authorization.can_delete_comment(
+            AuthorizationService.can_delete_comment(
                 self.user_a,
                 self.post_by_a,
                 self.comment_by_b_on_a,
@@ -84,7 +87,7 @@ class AuthorizationTests(unittest.TestCase):
 
     def test_comment_owner_can_delete_their_own_comment(self) -> None:
         self.assertTrue(
-            Authorization.can_delete_comment(
+            AuthorizationService.can_delete_comment(
                 self.user_b,
                 self.post_by_a,
                 self.comment_by_b_on_a,
@@ -93,7 +96,7 @@ class AuthorizationTests(unittest.TestCase):
 
     def test_other_regular_users_cannot_delete_someone_elses_comment(self) -> None:
         self.assertFalse(
-            Authorization.can_delete_comment(
+            AuthorizationService.can_delete_comment(
                 self.user_c,
                 self.post_by_a,
                 self.comment_by_b_on_a,
@@ -103,7 +106,7 @@ class AuthorizationTests(unittest.TestCase):
     def test_comment_must_belong_to_the_post_context(self) -> None:
         wrong_post = Post(id=999, author_id=self.user_a.id, title="x", body="y")
         self.assertFalse(
-            Authorization.can_delete_comment(
+            AuthorizationService.can_delete_comment(
                 self.user_a,
                 wrong_post,
                 self.comment_by_b_on_a,
@@ -113,3 +116,4 @@ class AuthorizationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
